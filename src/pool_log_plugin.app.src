@@ -1,6 +1,6 @@
 {application, pool_log_plugin,
- [{description, "Another amazing EMQX plugin."},
-  {vsn, "0.1.0"},
+ [{description, "RTT snipping function Added."},
+  {vsn, "0.2.0"},
   {modules, []},
   {registered, [pool_log_plugin_sup]},
   {applications, [kernel, stdlib, map_sets, sasl]},

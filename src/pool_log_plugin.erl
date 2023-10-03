@@ -2,7 +2,8 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("emqx/include/emqx_hooks.hrl").
-
+-include_lib("emqx/include/emqx_mqtt.hrl").
+-include_lib("emqx/include/types.hrl").
 %% for logging
 -include_lib("emqx/include/logger.hrl").
 
@@ -16,18 +17,32 @@ load(_Env) ->
 on_message_publish(Message, _Env) ->
 	    Timestamp = erlang:system_time(millisecond),
 	        io:format("Message received at ~p: ~p~n", [Timestamp, Message]),
-		?SLOG(notice, #{type => "publish",
+		?SLOG(notice, #{type => "published",
 			       timestamp => Timestamp
+			       %%topic => emqx_message:topic(Message)
 			       }),
 	    {ok, Message}.
 
 on_message_delivered(ClientInfo, Message, _Env) ->
 	    Timestamp = erlang:system_time(millisecond),
-	        io:format("Message delivered at ~p: ~p~n", [Timestamp, Message]),
-		?SLOG(notice, #{type => "delivered",
-			       timestamp => Timestamp
-			       }),
-		    {ok, Message}.
+	    #{clientid := ClientId} = ClientInfo,
+	    [ClientType | _ ] = string:split(ClientId, "_"),
+	    case ClientType of 
+	        <<"RTT">> ->
+			?SLOG(notice, #{type => "RTT",
+					clientType => ClientType,
+					rttmsg => Message
+					}),
+			    {ok, Message};
+		_ -> 
+	            io:format("Message delivered at ~p: ~p~n", [Timestamp, Message]),
+		    ?SLOG(notice, #{type => "delivered",
+				    clientType => ClientType,
+		        	   timestamp => Timestamp
+			           %%topic => emqx_message:topic(Message)
+			           }),
+		        {ok, Message}
+		end.
 
 unload() ->
     unhook('message.publish',     {?MODULE, on_message_publish}),
