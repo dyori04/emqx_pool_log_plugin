@@ -29,9 +29,14 @@ on_message_delivered(ClientInfo, Message, _Env) ->
 	    [ClientType | _ ] = string:split(ClientId, "_"),
 	    case ClientType of 
 	        <<"RTT">> ->
+			PayloadBin = emqx_message:payload(Message),
+			PayloadJson = jiffy:decode(PayloadBin, [return_maps]),
+			RTT = maps:get(<<"RTT">>, PayloadJson),
+			Seq = maps:get(<<"Seq">>, PayloadJson),
 			?SLOG(notice, #{type => "RTT",
 					clientType => ClientType,
-					rttmsg => Message
+					rtt => RTT,
+					seq => Seq
 					}),
 			    {ok, Message};
 		_ -> 
